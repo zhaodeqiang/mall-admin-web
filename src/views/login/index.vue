@@ -36,30 +36,38 @@
           </span>
           </el-input>
         </el-form-item>
-        <el-form-item style="margin-bottom: 60px">
-          <el-button style="width: 100%" type="primary" :loading="loading" @click.native.prevent="handleLogin">
+        <el-form-item style="margin-bottom: 60px;text-align: center">
+          <el-button style="width: 45%" type="primary" :loading="loading" @click.native.prevent="handleLogin">
             登录
+          </el-button>
+          <el-button style="width: 45%" type="primary" @click.native.prevent="handleTry">
+            获取体验账号
           </el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <img :src="login_center_bg" class="login-center-layout">
     <el-dialog
-      title="特别赞助"
+      title="公众号二维码"
       :visible.sync="dialogVisible"
+      :show-close="false"
+      :center="true"
       width="30%">
-      <span>mall项目已由CODING特别赞助，点击去支持，页面加载完后点击<span class="color-main font-medium">免费体验</span>按钮即可完成支持，谢谢！</span>
+      <div style="text-align: center">
+        <span class="font-title-large"><span class="color-main font-extra-large">关注公众号</span>回复<span class="color-main font-extra-large">体验</span>获取体验账号</span>
+        <br>
+        <img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/banner/qrcode_for_macrozheng_258.jpg" width="160" height="160" style="margin-top: 10px">
+      </div>
       <span slot="footer" class="dialog-footer">
-    <el-button @click="dialogCancel">残忍拒绝</el-button>
-    <el-button type="primary" @click="dialogConfirm">去支持</el-button>
-  </span>
+    <el-button type="primary" @click="dialogConfirm">确定</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
   import {isvalidUsername} from '@/utils/validate';
-  import {setSupport,getSupport,SupportUrl} from '@/utils/support';
+  import {setSupport,getSupport,setCookie,getCookie} from '@/utils/support';
   import login_center_bg from '@/assets/images/login_center_bg.png'
 
   export default {
@@ -81,8 +89,8 @@
       };
       return {
         loginForm: {
-          username: 'admin',
-          password: '123456',
+          username: '',
+          password: '',
         },
         loginRules: {
           username: [{required: true, trigger: 'blur', validator: validateUsername}],
@@ -91,7 +99,18 @@
         loading: false,
         pwdType: 'password',
         login_center_bg,
-        dialogVisible:false
+        dialogVisible:false,
+        supportDialogVisible:false
+      }
+    },
+    created() {
+      this.loginForm.username = getCookie("username");
+      this.loginForm.password = getCookie("password");
+      if(this.loginForm.username === undefined||this.loginForm.username==null||this.loginForm.username===''){
+        this.loginForm.username = 'admin';
+      }
+      if(this.loginForm.password === undefined||this.loginForm.password==null){
+        this.loginForm.password = '';
       }
     },
     methods: {
@@ -105,14 +124,16 @@
       handleLogin() {
         this.$refs.loginForm.validate(valid => {
           if (valid) {
-            let isSupport = getSupport();
-            if(isSupport===undefined||isSupport==null){
-              this.dialogVisible =true;
-              return;
-            }
+            // let isSupport = getSupport();
+            // if(isSupport===undefined||isSupport==null){
+            //   this.dialogVisible =true;
+            //   return;
+            // }
             this.loading = true;
             this.$store.dispatch('Login', this.loginForm).then(() => {
               this.loading = false;
+              setCookie("username",this.loginForm.username,15);
+              setCookie("password",this.loginForm.password,15);
               this.$router.push({path: '/'})
             }).catch(() => {
               this.loading = false
@@ -123,10 +144,12 @@
           }
         })
       },
+      handleTry(){
+        this.dialogVisible =true
+      },
       dialogConfirm(){
         this.dialogVisible =false;
         setSupport(true);
-        window.location.href=SupportUrl;
       },
       dialogCancel(){
         this.dialogVisible = false;
